@@ -27,19 +27,23 @@ $(window).on('app-ready',function(){
 		var fileServer = require('socket.io').listen(9090);
 		fileServer.sockets.on('connection', function (socket) {
 			log('someone connected...');
-			var string = 'По словам микробиолога Чарльза Герба из университета Аризоны, на мобильном телефоне можно обнаружить в 10 раз больше микробов, чем на сиденье унитаза. «Когда вы последний раз чистили свой телефон?» — спрашивает Герба. Он отметил, что, в отличие от мобильников, унитазы все-таки моют, потому они оказываются чище электронных устройств, имеющихся почти у каждого';
 			var currentPos = 0;
-			var buffer = 10;
-			socket.emit('data',string.substring(currentPos,(currentPos+buffer)));
-			currentPos+=buffer;
+			var bufferSize = 64;
+			var buffer = new Buffer(bufferSize);
+			var file = $('#filePathInput').html();
+			var size = fs.statSync(file).size;
+			fs.readSync(file, buffer, 0, bufferSize, currentPos);			
+			socket.emit('data',buffer.toString());
+			currentPos+=bufferSize;
 			socket.on('dataAccepted',function(){
-				if(currentPos+buffer<string.length){
-					socket.emit('data',string.substring(currentPos,(currentPos+buffer)));
-					currentPos+=buffer;
+				if(currentPos+bufferSize<size){
+					fs.readSync(file, buffer, 0, bufferSize, currentPos);			
+					socket.emit('data',buffer.toString());
+					currentPos+=bufferSize;
 					log(currentPos);
 				}else{
-					socket.emit('finalData',string.substring(currentPos,(string.length)));
-					log(string.length);
+					fs.readSync(file, buffer, 0, (size-currentPos), currentPos);			
+					socket.emit('finalData',buffer.toString());
 					log('transfer complete');
 				}
 			});
@@ -88,7 +92,6 @@ $(window).on('app-ready',function(){
 				var to = $('#userRequestField').val();
 				$('#filePathInput').html(file);
 				log({name:name,size:stat.size,type:type});
-				$('#filePathInput').html(file);
 				mainSocket.emit('sendFileRequest',{to:to,file:{name:name,size:stat.size,type:type}});
 			}
 		});
