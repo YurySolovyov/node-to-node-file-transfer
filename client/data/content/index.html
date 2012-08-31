@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<script src="js/jquery-1.8.0.min.js"></script>
+		<script src="js/socket.io.min.js"></script>
+		<script src="js/client.js"></script>
+	</head>
+	<style>
+		body{
+			background:#fff;
+			font-family:"Segoe UI Light";
+			color:#000;
+			width: 100%;
+			height: 100%;
+			overflow:hidden;
+			box-sizing:border-box;
+			padding:0;
+			margin:0;
+		}
+		
+		a,a:visited{
+			color:#0099cc;
+			text-decoration:none;
+		}
+		
+		a:hover{
+			color:#33B5E5;
+			text-decoration:underline;
+		}
+		#output{
+			width:90%;
+			height:400px;
+			margin:10px auto;
+			font-size:14px;
+			overflow-y:scroll;
+			padding:10px;
+		}
+		#userRequestField,#fileSelector{display:none;}
+	</style>
+<body>
+	<h1 id="loginHeader">NO_LOGIN_SET</h1>
+	<input type="text" id="loginField" placeholder="Login..." value="dream"/><a href="#" id="loginSubmit">Set</a><br />
+	<input type="text" id="userRequestField" placeholder="User to send a file"/><br />
+	<button id="fileSelector">Отправить файл</button><span id="filePathInput"></span>
+	<div id="output"></div>
+</body>
+</html>
