@@ -27,6 +27,22 @@ $(window).on('app-ready',function(){
 		var fileServer = require('socket.io').listen(9090);
 		fileServer.sockets.on('connection', function (socket) {
 			log('someone connected...');
+			var string = 'По словам микробиолога Чарльза Герба из университета Аризоны, на мобильном телефоне можно обнаружить в 10 раз больше микробов, чем на сиденье унитаза. «Когда вы последний раз чистили свой телефон?» — спрашивает Герба. Он отметил, что, в отличие от мобильников, унитазы все-таки моют, потому они оказываются чище электронных устройств, имеющихся почти у каждого';
+			var currentPos = 0;
+			var buffer = 10;
+			socket.emit('data',string.substring(currentPos,(currentPos+buffer)));
+			currentPos+=buffer;
+			socket.on('dataAccepted',function(){
+				if(currentPos+buffer<string.length){
+					socket.emit('data',string.substring(currentPos,(currentPos+buffer)));
+					currentPos+=buffer;
+					log(currentPos);
+				}else{
+					socket.emit('finalData',string.substring(currentPos,(string.length)));
+					log(string.length);
+					log('transfer complete');
+				}
+			});
 		});
 		mainSocket.emit('fileServerStarted');
 	});
@@ -36,6 +52,15 @@ $(window).on('app-ready',function(){
 		fileSocket.on('connect',function(){
 			log('connected to sender');
 		});
+		fileSocket.on('data',function(data){
+			log(data);
+			fileSocket.emit('dataAccepted');
+		});
+		fileSocket.on('finalData',function(data){
+			log(data);
+			log('transfer complete');
+		});
+		
 	});
 	
 	$('#loginSubmit').click(function(){
