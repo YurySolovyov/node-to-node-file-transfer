@@ -4,7 +4,6 @@ $(window).on('app-ready',function(){
 	var fs = require('fs');
 	var Buffer = require('buffer').Buffer;
 	var crypto = require('crypto');
-	var net = require('net');
 	function log(item){
 			$('#output').append('debug: '+JSON.stringify(item)+'<br>');
 	}
@@ -21,56 +20,57 @@ $(window).on('app-ready',function(){
 	mainSocket.on('sendFileRequest',function(data){
 		var isAccepted = confirm('from: '+data.from+'\nname: '+data.file.name+'\nsize: '+data.file.size+'\ntype: '+data.file.type);
 		if(isAccepted){
-			window.frame.openDialog({
-					type:'save',
-					acceptTypes: { all:['*.*'] },
-					initialValue:data.file.name,
-					multiSelect:false,
-					dirSelect:false
-					},function(err,file){
-						if(!err){
-							$('#filePathInput').text(file);
-							log('file accepted');
-							mainSocket.emit('fileAccepted',{from:data.from});
-						}
-			});
+			log('file accepted');
+			mainSocket.emit('fileAccepted',{from:data.from});
 		}
+		
 	});
 	mainSocket.on('fileAccepted',function(){
-		var server = net.createServer(function (socket) {
-		log('someone connected...');
+		var fileServer = require('socket.io').listen(9090);
+		fileServer.sockets.on('connection', function (socket) {
+			log('someone connected...');
 			var currentPos = 0;
 			var bufferSize = 512;
+			var buffer = new Buffer(bufferSize);
 			var file = path.resolve($('#filePathInput').html());
 			var size = fs.statSync(file).size;
-			var rs = fs.createReadStream(file, { bufferSize: bufferSize,  encoding: 'binary' });
+			var rs = fs.createReadStream(file, { bufferSize: bufferSize,  encoding: 'utf8' });
 			rs.on('data',function(data){
-				socket.write(data,'binary');
-			});
-			rs.on('end',function(){
-				socket.end();
+				var string = data.toString('base64')
+				log(string);
+				socket.emit('data',data.toString('base64'));
 			});
 			
-		}).listen(9090);
+			rs.on('end',function(){
+				socket.emit('finalData','');
+			});
+			
+
+			socket.on('dataAccepted',function(){
+			
+			});
+		});
 		mainSocket.emit('fileServerStarted');
 	});
 	
 	mainSocket.on('fileServerStarted',function(data){
-		var fileSocket = net.createConnection(9090, data.ip);
-		var filePath = path.resolve($('#filePathInput').html());
-		var ws = fs.createWriteStream(filePath,{encoding: 'binary' });
+		var fileSocket = io.connect('http://'+data.ip+':9090');
+		var bytesTransferred =0;
 		fileSocket.on('connect',function(){
 			log('connected to sender');
 		});
-		
 		fileSocket.on('data',function(data){
-			ws.write(data,'binary');
+			log(data);
+			fileSocket.emit('dataAccepted');
+			bytesTransferred+=data.length
 		});
-		fileSocket.on('end',function(){
+		fileSocket.on('finalData',function(data){
+			log(data);
 			log('transfer complete');
-			ws.end();
-			fileSocket.end();
+			log('bytesTransferred: '+bytesTransferred);
+			
 		});
+		
 	});
 	
 	$('#loginSubmit').click(function(){
