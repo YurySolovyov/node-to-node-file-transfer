@@ -8,6 +8,12 @@ $(window).on('app-ready',function(){
 	function log(item){
 			$('#output').append('debug: '+JSON.stringify(item)+'<br>');
 	}
+	
+	function updateProgress(bytesWritten,fileSize){
+		var percent = Math.round((bytesWritten/fileSize)*100);
+		$('#progress').children('#bar').css('width',percent+'%');
+	}
+	
 	var mainSocket = io.connect('http://localhost:9000');
 	
 	mainSocket.on('connect',function(){
@@ -30,6 +36,7 @@ $(window).on('app-ready',function(){
 					},function(err,file){
 						if(!err){
 							$('#filePathInput').text(file);
+							$('#filePathInput').data('fileSize',data.file.size);
 							log('file accepted');
 							mainSocket.emit('fileAccepted',{from:data.from});
 						}
@@ -39,13 +46,15 @@ $(window).on('app-ready',function(){
 	mainSocket.on('fileAccepted',function(){
 		var server = net.createServer(function (socket) {
 		log('someone connected...');
-			var currentPos = 0;
-			var bufferSize = 512;
-			var file = path.resolve($('#filePathInput').html());
-			var size = fs.statSync(file).size;
-			var rs = fs.createReadStream(file, { bufferSize: bufferSize,  encoding: 'binary' });
+			var bytesSent = 0;
+			var bufferSize = 64*1024;
+			var filePath = path.resolve($('#filePathInput').html());
+			var fileSize = fs.statSync(filePath).size;
+			var rs = fs.createReadStream(filePath, { bufferSize: bufferSize, encoding: 'binary'});
 			rs.on('data',function(data){
 				socket.write(data,'binary');
+				bytesSent+=data.length;
+				updateProgress(bytesSent,fileSize)
 			});
 			rs.on('end',function(){
 				socket.end();
@@ -58,14 +67,20 @@ $(window).on('app-ready',function(){
 	mainSocket.on('fileServerStarted',function(data){
 		var fileSocket = net.createConnection(9090, data.ip);
 		var filePath = path.resolve($('#filePathInput').html());
+		var fileSize = $('#filePathInput').data('fileSize');
+		var bytesRecived = 0;
 		var ws = fs.createWriteStream(filePath,{encoding: 'binary' });
+		
 		fileSocket.on('connect',function(){
 			log('connected to sender');
 		});
 		
 		fileSocket.on('data',function(data){
 			ws.write(data,'binary');
+			bytesRecived+=data.length;
+			updateProgress(bytesRecived,fileSize);
 		});
+		
 		fileSocket.on('end',function(){
 			log('transfer complete');
 			ws.end();
