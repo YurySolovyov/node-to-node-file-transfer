@@ -29,6 +29,7 @@
 			color:#33B5E5;
 			text-decoration:underline;
 		}
+		#loginHeader{margin:10px 0;}
 		#output{
 			width:90%;
 			height:400px;
@@ -38,6 +39,12 @@
 			padding:10px;
 		}
 		#userRequestField,#fileSelector{display:none;}
+		#dataTransferred{
+			line-height:32px;
+			height:32px;
+			width:100%;
+			text-align:center;
+		}
 		#progress{
 			width: 100%;
 			height: 3px;
@@ -47,6 +54,7 @@
 			height: 3px;
 			background-color: #09C;
 			width: 0%;
+			-webkit-transtion:0.1s;
 		}
 	</style>
 <body>
@@ -54,6 +62,7 @@
 	<input type="text" id="loginField" placeholder="Login..." value="dream"/><a href="#" id="loginSubmit">Set</a><br />
 	<input type="text" id="userRequestField" placeholder="User to send a file"/><br />
 	<button id="fileSelector">Отправить файл</button><span id="filePathInput"></span>
+	<div id="dataTransferred"></div>
 	<div id="progress"><div id="bar"></div></div>
 	<div id="output"></div>
 </body>

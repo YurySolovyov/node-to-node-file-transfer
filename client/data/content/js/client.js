@@ -2,20 +2,19 @@ $(window).on('app-ready',function(){
 	var mime = require('mime');
 	var path = require('path');
 	var fs = require('fs');
-	var Buffer = require('buffer').Buffer;
-	var crypto = require('crypto');
 	var net = require('net');
+	
 	function log(item){
-			$('#output').append('debug: '+JSON.stringify(item)+'<br>');
+		$('#output').append('debug: '+JSON.stringify(item)+'<br>');
 	}
 	
 	function updateProgress(bytesWritten,fileSize){
 		var percent = Math.round((bytesWritten/fileSize)*100);
 		$('#progress').children('#bar').css('width',percent+'%');
+		$('#dataTransferred').html(Math.round(bytesWritten/1024)+' KB transferred of '+Math.round(fileSize/1024));
 	}
 	
 	var mainSocket = io.connect('http://localhost:9000');
-	
 	mainSocket.on('connect',function(){
 		log('main socket connection established');
 	});
@@ -25,41 +24,42 @@ $(window).on('app-ready',function(){
 	});
 	
 	mainSocket.on('sendFileRequest',function(data){
-		var isAccepted = confirm('from: '+data.from+'\nname: '+data.file.name+'\nsize: '+data.file.size+'\ntype: '+data.file.type);
+		var isAccepted = confirm('from: '+data.from+'\nname: '+data.file.name+'\nsize: '+Math.round(data.file.size/1024)+' KB'+'\ntype: '+data.file.type);
+		window.frame.focus();
 		if(isAccepted){
 			window.frame.openDialog({
-					type:'save',
-					acceptTypes: { all:['*.*'] },
-					initialValue:data.file.name,
-					multiSelect:false,
-					dirSelect:false
-					},function(err,file){
-						if(!err){
-							$('#filePathInput').text(file);
-							$('#filePathInput').data('fileSize',data.file.size);
-							log('file accepted');
-							mainSocket.emit('fileAccepted',{from:data.from});
-						}
-			});
+				type:'save',
+				acceptTypes: { All:['*.*'] },
+				initialValue:data.file.name,
+				multiSelect:false,
+				dirSelect:false
+				},function(err,file){
+					if(!err){
+						$('#filePathInput').text(file);
+						$('#filePathInput').data('fileSize',data.file.size);
+						log('file accepted');
+						mainSocket.emit('fileAccepted',{from:data.from});
+					}
+				});
 		}
 	});
+	
 	mainSocket.on('fileAccepted',function(){
 		var server = net.createServer(function (socket) {
 		log('someone connected...');
 			var bytesSent = 0;
-			var bufferSize = 64*1024;
 			var filePath = path.resolve($('#filePathInput').html());
 			var fileSize = fs.statSync(filePath).size;
-			var rs = fs.createReadStream(filePath, { bufferSize: bufferSize, encoding: 'binary'});
+			var rs = fs.createReadStream(filePath);
+			rs.pipe(socket);
 			rs.on('data',function(data){
-				socket.write(data,'binary');
 				bytesSent+=data.length;
-				updateProgress(bytesSent,fileSize)
+				updateProgress(bytesSent,fileSize);
 			});
 			rs.on('end',function(){
 				socket.end();
-			});
-			
+				log('transfer complete');
+			});			
 		}).listen(9090);
 		mainSocket.emit('fileServerStarted');
 	});
@@ -69,22 +69,17 @@ $(window).on('app-ready',function(){
 		var filePath = path.resolve($('#filePathInput').html());
 		var fileSize = $('#filePathInput').data('fileSize');
 		var bytesRecived = 0;
-		var ws = fs.createWriteStream(filePath,{encoding: 'binary' });
-		
+		var ws = fs.createWriteStream(filePath);		
 		fileSocket.on('connect',function(){
 			log('connected to sender');
-		});
-		
+		});		
+		fileSocket.pipe(ws);		
 		fileSocket.on('data',function(data){
-			ws.write(data,'binary');
 			bytesRecived+=data.length;
 			updateProgress(bytesRecived,fileSize);
-		});
-		
+		});		
 		fileSocket.on('end',function(){
 			log('transfer complete');
-			ws.end();
-			fileSocket.end();
 		});
 	});
 	
@@ -96,12 +91,11 @@ $(window).on('app-ready',function(){
 		mainSocket.emit('setLogin',login);
 		$('#loginHeader').html(login);
 	});
-	
 
 	$('#fileSelector').click(function(){
 		 window.frame.openDialog({
 			type:'open',
-			acceptTypes: { all:['*.*'] },
+			acceptTypes: { All:['*.*'] },
 			multiSelect:false,
 			dirSelect:false
 		},function(err,files){
