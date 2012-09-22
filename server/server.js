@@ -6,6 +6,14 @@ io.sockets.on('connection', function (socket) {
 		clients[socket.id] = {};
 		clients[socket.id].login = login;
 		console.log(socket.id+' login is: '+login);
+		var online=[];
+		for(var client in clients){
+			if(clients[client].login!=login){
+				online.push(clients[client].login);
+			}else continue;
+		}
+		socket.emit('onlinePush',online);
+		socket.broadcast.emit('userJoined',{login:login});
 	});
 	
 	socket.on('sendFileRequest',function(data){
@@ -36,6 +44,10 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 	
+	socket.on('message',function(data){
+		io.sockets.emit('message',data);
+	})
+	
 	socket.on('fileServerStarted',function(){//socket is sender
 		var address = socket.handshake.address.address;
 		clients[socket.id].reciver.emit('fileServerStarted',{ip:address});
@@ -43,7 +55,9 @@ io.sockets.on('connection', function (socket) {
 	
 	socket.on('disconnect',function(){
 		if(clients[socket.id]){
-			console.log(clients[socket.id].login+' disconnected');
+			var login = clients[socket.id].login;
+			console.log(login+' disconnected');
+			socket.broadcast.emit('userLeaved',{login:login});
 			delete clients[socket.id];
 		}
 	});

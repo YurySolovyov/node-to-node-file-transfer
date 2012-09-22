@@ -1,0 +1,112 @@
+html{
+	width: 100%;
+	height: 100%;
+}
+
+body{
+	background:#fff;
+	font-family:"Segoe UI Light";
+	color:#000;
+	width: 100%;
+	height: 100%;
+	overflow:hidden;
+	box-sizing:border-box;
+	padding:0;
+	margin:0;
+}
+div{box-sizing:border-box;}
+a,a:visited{
+	color:#0099cc;
+	text-decoration:none;
+}
+input{
+	margin:0;
+}
+
+a:hover{
+	color:#33B5E5;
+	text-decoration:underline;
+}
+::-webkit-scrollbar {width:3px;}
+::-webkit-scrollbar-thumb{background:#0099CC;}
+::-webkit-scrollbar-thumb:hover{background:#33B5E5;}
+
+#loginHeader{margin:10px;}
+#output{
+	width:70%;
+	height:400px;
+	margin:10px auto;
+	font-size:14px;
+	overflow-y:scroll;
+	overflow-x:hidden;
+	padding:10px;
+	float:left;
+	border:1px #ccc solid;
+}
+#userList{
+	display:block;
+	box-sizing:border-box;
+	width:30%;
+	float:left;
+	overflow-x:hidden;
+	height:100%;
+	margin:0;
+	padding:0 10px;
+}
+#userList li{
+	list-style:none;
+	display:block;
+	border-left:1px #ccc solid;
+	padding:3px;
+	margin:0;
+	cursor:pointer;
+}
+#userList li:hover{
+	border-left:1px #09c solid;
+}
+
+#userList li:hover .sendFile{
+	opacity:1;
+}
+#info{
+	overflow:hidden;
+	float:left;
+	width:70%;
+}
+#filePathInput{
+	display:none;
+}
+#dataTransferred,#speed{
+	line-height:32px;
+	height:32px;
+	width:50%;
+	text-align:center;
+	float:left;
+}
+#progress{
+	width: 100%;
+	height: 3px;
+	background-color: #ccc;
+}
+#bar{
+	height:3px;
+	background-color: #09C;
+	width:0%;
+	-webkit-transtion:0.2s;
+}
+
+#fileAcceptForm{
+	position:fixed;
+	top:-300px;
+	width:50%;
+	height:300px;
+	left:25%;
+	background:#fff;
+	border-bottom:1px #09c solid;
+	box-shadow:0 0 3px #09c;
+	display:none;
+	padding:10px;
+}
+#fileAcceptForm div{
+	margin:10px;
+}

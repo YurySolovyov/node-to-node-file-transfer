@@ -2,68 +2,33 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-		<title></title>
+		<title>Transfer a file</title>
+		<link rel="stylesheet" href="css/style.css">
 		<script src="js/jquery-1.8.1.min.js"></script>
 		<script src="js/socket.io.min.js"></script>
 		<script src="js/client.js"></script>
 	</head>
-	<style>
-		body{
-			background:#fff;
-			font-family:"Segoe UI Light";
-			color:#000;
-			width: 100%;
-			height: 100%;
-			overflow:hidden;
-			box-sizing:border-box;
-			padding:0;
-			margin:0;
-		}
-		
-		a,a:visited{
-			color:#0099cc;
-			text-decoration:none;
-		}
-		
-		a:hover{
-			color:#33B5E5;
-			text-decoration:underline;
-		}
-		#loginHeader{margin:10px 0;}
-		#output{
-			width:90%;
-			height:400px;
-			margin:10px auto;
-			font-size:14px;
-			overflow-y:scroll;
-			padding:10px;
-		}
-		#userRequestField,#fileSelector{display:none;}
-		#dataTransferred{
-			line-height:32px;
-			height:32px;
-			width:100%;
-			text-align:center;
-		}
-		#progress{
-			width: 100%;
-			height: 3px;
-			background-color: #AAA;
-		}
-		#bar{
-			height: 3px;
-			background-color: #09C;
-			width: 0%;
-			-webkit-transtion:0.1s;
-		}
-	</style>
 <body>
-	<h1 id="loginHeader">NO_LOGIN_SET</h1>
-	<input type="text" id="loginField" placeholder="Login..." value="dream"/><a href="#" id="loginSubmit">Set</a><br />
-	<input type="text" id="userRequestField" placeholder="User to send a file"/><br />
-	<button id="fileSelector">Отправить файл</button><span id="filePathInput"></span>
-	<div id="dataTransferred"></div>
-	<div id="progress"><div id="bar"></div></div>
+	<h1 id="loginHeader"></h1>
+	<ul id="userList"></ul>
+	<div id="info">
+		<div id="dataTransferred"></div><div id="speed"></div>
+		<div id="progress">
+			<div id="bar"></div>
+		</div>
+	</div>	
 	<div id="output"></div>
+	<div id="messageForm">
+		<input type="text" id="messageField" placeholder="Type message"/>
+		<input type="button" id="messageSubmit" value="Send"/>
+	</div>
+	<div id="fileAcceptForm">
+		<div id="fileFrom"></div>
+		<div id="fileName"></div>
+		<div id="fileSize"></div>
+		<div id="fileType"></div>
+		<input type="button" id="acceptFile" value="Accept"/><input type ="button" id="cancel" value="Cancel"/>
+	</div>
+	<span id="filePathInput"></span>
 </body>
 </html>
