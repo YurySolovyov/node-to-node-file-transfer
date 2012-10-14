@@ -3,17 +3,21 @@ $(window).on('app-ready',function(){
 	var path = require('path');
 	var fs = require('fs');
 	var net = require('net');
+	var child_process = require('child_process');
 	var login = "";
 	
 	function log(item){
 		$('#output').append('debug: '+JSON.stringify(item)+'<br>');
 	}
 	
-	function updateProgress(bytesWritten,fileSize){
+	function updateProgress(bytesWritten,fileSize,speed){
 		var width = $('#progress').width();
 		var barWidth = Math.round((bytesWritten/fileSize)*width);
 		$('#bar').css('width',barWidth+'px');
 		$('#dataTransferred').html(Math.round(bytesWritten/1024)+' KB transferred of '+Math.round(fileSize/1024));
+		if(speed){
+			$('#speed').html(speed+' KB/sec');
+		}
 	}
 	
 	var mainSocket = io.connect('http://localhost:9000');
@@ -53,32 +57,46 @@ $(window).on('app-ready',function(){
 	});
 	
 	mainSocket.on('fileAccepted',function(){
-		var server = net.createServer(function (socket) {
-		log('someone connected...');
-			var bytesSent = 0;
-			var filePath = path.resolve($('#filePathInput').html());
-			var fileSize = fs.statSync(filePath).size;
-			var rs = fs.createReadStream(filePath);
-			rs.pipe(socket);
-			var timeStamp = new Date().getTime();
-			var speedCheck = setInterval(function(){
-				var now = new Date().getTime();
-				var speed = Math.round((socket.bytesWritten/((now - timeStamp)/1000))/1024);
-				$('#speed').html(speed+' KB/sec');
-				updateProgress(socket.bytesWritten,fileSize);
-			},500);
-			
-			rs.on('end',function(){
-				socket.end();
-				clearInterval(speedCheck);
-				updateProgress(socket.bytesWritten,fileSize);
+		var filePath = path.resolve($('#filePathInput').html());
+		var fileSize = fs.statSync(filePath).size;
+		var fileServer = child_process.fork(__dirname+'\\content\\js\\workers\\fileServer.js',{env:{filePath:filePath}});
+		fileServer.on('message',function(message){
+			if(message.type === 'serverReady'){
+				mainSocket.emit('fileServerStarted');
+				log('fileServerStarted');
+			}else if(message.type === 'progressUpdate'){
+				updateProgress(message.bytesWritten,fileSize,message.speed);
+			}else if(message.type === 'workerExit'){
+				updateProgress(message.bytesWritten,fileSize);
 				log('transfer complete');
-			});			
-		}).listen(9090);
-		mainSocket.emit('fileServerStarted');
+			}
+		});
+		fileServer.on('exit',function(){
+			log('child exited'+(new Date().getTime()));
+		});
 	});
 	
 	mainSocket.on('fileServerStarted',function(data){
+	//fix speed
+		var filePath = path.resolve($('#filePathInput').html());
+		var fileSize = parseInt($('#filePathInput').data('fileSize'));
+		var fileSocket = child_process.fork(__dirname+'\\content\\js\\workers\\fileSocket.js',{env:{filePath:filePath,serverAddress:data.ip}});
+		fileSocket.on('message',function(message){
+			if(message.type === 'serverConnectionEstablished'){
+				log('connected to sender');
+			}else if(message.type === 'progressUpdate'){
+				updateProgress(message.bytesRead,fileSize,message.speed);
+			}else if(message.type === 'workerExit'){
+				updateProgress(message.bytesRead,fileSize);
+				log('transfer complete');
+			}else if(message.type === 'error'){
+				log(message.err);
+			}	
+		});
+		fileSocket.on('exit',function(){
+			log('child exited'+(new Date().getTime()));
+		});
+		/*
 		var fileSocket = net.createConnection(9090, data.ip);
 		var filePath = path.resolve($('#filePathInput').html());
 		var fileSize = $('#filePathInput').data('fileSize');
@@ -90,7 +108,7 @@ $(window).on('app-ready',function(){
 			$('#speed').html(speed+' KB/sec');
 			updateProgress(fileSocket.bytesRead,fileSize);
 		},500);
-		var ws = fs.createWriteStream(filePath);		
+		var ws = fs.createWriteStream(filePath,{bufferSize: 1024 * 1024});		
 		fileSocket.on('connect',function(){
 			log('connected to sender');
 		});		
@@ -100,6 +118,7 @@ $(window).on('app-ready',function(){
 			updateProgress(fileSocket.bytesRead,fileSize);
 			log('transfer complete');
 		});
+		*/
 	});
 	
 	mainSocket.on('message',function(data){
