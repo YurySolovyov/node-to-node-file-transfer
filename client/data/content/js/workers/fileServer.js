@@ -12,9 +12,9 @@ var server = net.createServer(function (socket) {
 	},1000);
 	
 	rs.on('end',function(){
+		process.send({type:'workerExit',bytesWritten:socket.bytesWritten});
 		clearInterval(speedCheck);
 		socket.destroy();
-		process.send({type:'workerExit',bytesWritten:socket.bytesWritten});
 		process.exit();
 	});			
 	

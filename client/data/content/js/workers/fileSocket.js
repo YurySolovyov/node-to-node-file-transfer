@@ -14,9 +14,9 @@ var speedCheck = setInterval(function(){
 },1000);
 
 fileSocket.on('close',function(){
+	process.send({type:'workerExit',bytesRead:fileSocket.bytesRead});	
 	clearInterval(speedCheck);
-	fileSocket.destroy();
-	process.send({type:'workerExit',bytesWritten:fileSocket.bytesWritten});	
+	fileSocket.destroy();	
 	process.exit();
 });
 fileSocket.on('error',function(err){
