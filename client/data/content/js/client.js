@@ -59,7 +59,7 @@ $(window).on('app-ready',function(){
 	mainSocket.on('fileAccepted',function(){
 		var filePath = path.resolve($('#filePathInput').html());
 		var fileSize = fs.statSync(filePath).size;
-		var fileServer = child_process.fork(__dirname+'\\content\\js\\workers\\fileServer.js',{env:{filePath:filePath}});
+		var fileServer = child_process.fork(__dirname+'\\content\\js\\workers\\fileServer.js',{env:{filePath:filePath},silent:true});
 		fileServer.on('message',function(message){
 			if(message.type === 'serverReady'){
 				mainSocket.emit('fileServerStarted');
@@ -74,13 +74,16 @@ $(window).on('app-ready',function(){
 		fileServer.on('exit',function(){
 			log('child exited'+(new Date().getTime()));
 		});
+		fileServer.stderr.on('data',function(data){
+			console.log(data.toString());
+			log('error in child');
+		});
 	});
 	
 	mainSocket.on('fileServerStarted',function(data){
-	//fix speed
 		var filePath = path.resolve($('#filePathInput').html());
 		var fileSize = parseInt($('#filePathInput').data('fileSize'));
-		var fileSocket = child_process.fork(__dirname+'\\content\\js\\workers\\fileSocket.js',{env:{filePath:filePath,serverAddress:data.ip}});
+		var fileSocket = child_process.fork(__dirname+'\\content\\js\\workers\\fileSocket.js',{env:{filePath:filePath,serverAddress:data.ip},silent:true});
 		fileSocket.on('message',function(message){
 			if(message.type === 'serverConnectionEstablished'){
 				log('connected to sender');
@@ -96,29 +99,10 @@ $(window).on('app-ready',function(){
 		fileSocket.on('exit',function(){
 			log('child exited'+(new Date().getTime()));
 		});
-		/*
-		var fileSocket = net.createConnection(9090, data.ip);
-		var filePath = path.resolve($('#filePathInput').html());
-		var fileSize = $('#filePathInput').data('fileSize');
-		var bytesRecived = 0;
-		var timeStamp = new Date().getTime();
-		var speedCheck = setInterval(function(){
-			var now = new Date().getTime();
-			var speed = Math.round((fileSocket.bytesRead/((now - timeStamp)/1000))/1024);
-			$('#speed').html(speed+' KB/sec');
-			updateProgress(fileSocket.bytesRead,fileSize);
-		},500);
-		var ws = fs.createWriteStream(filePath,{bufferSize: 1024 * 1024});		
-		fileSocket.on('connect',function(){
-			log('connected to sender');
-		});		
-		fileSocket.pipe(ws);	
-		fileSocket.on('end',function(){
-			clearInterval(speedCheck);
-			updateProgress(fileSocket.bytesRead,fileSize);
-			log('transfer complete');
+		fileSocket.stderr.on('data',function(data){
+			console.log(data.toString());
+			log('error in child');
 		});
-		*/
 	});
 	
 	mainSocket.on('message',function(data){

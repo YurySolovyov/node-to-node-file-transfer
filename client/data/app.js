@@ -21,7 +21,7 @@ window.on('ready', function(){
 	window.module = module;
 	window.__dirname = __dirname;
 
-	function F12(e){ return e.keyIdentifier === 'F12' }
+	function F12(e){ return e.keyIdentifier === 'F12'; }
 
 	window.addEventListener('keydown',function(e){
 		if(F12(e)){
