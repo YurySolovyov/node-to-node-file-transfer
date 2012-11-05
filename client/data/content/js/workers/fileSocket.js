@@ -10,18 +10,15 @@ var ws = fs.createWriteStream(filePath, {
 	bufferSize: 1024 * 1024
 });
 fileSocket.pipe(ws);
-var timeStamp = new Date().getTime();
 var biteStamp = 0;
 var speedCheck = setInterval(function () {
-	var now = new Date().getTime();
-	var speed = Math.round(((fileSocket.bytesRead - biteStamp) / ((now - timeStamp) / 1000)) / 1024);
+	var speed = Math.round((fileSocket.bytesRead - biteStamp) / 1024);
 	process.send({
 		type: 'progressUpdate',
 		speed: speed,
 		bytesRead: fileSocket.bytesRead
 	});
 	biteStamp = fileSocket.bytesRead;
-	timeStamp = now;
 }, 1000);
 
 fileSocket.on('close', function () {
@@ -33,6 +30,7 @@ fileSocket.on('close', function () {
 	fileSocket.destroy();
 	process.exit();
 });
+
 fileSocket.on('error', function (err) {
 	process.send({
 		type: 'error',

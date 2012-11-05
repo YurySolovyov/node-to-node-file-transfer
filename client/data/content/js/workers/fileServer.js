@@ -6,18 +6,15 @@ var server = net.createServer(function (socket) {
 		bufferSize: 1024 * 1024
 	});
 	rs.pipe(socket);
-	var timeStamp = new Date().getTime();
 	var biteStamp = 0;
 	var speedCheck = setInterval(function () {
-		var now = new Date().getTime();
-		var speed = Math.round(((socket.bytesWritten - biteStamp) / ((now - timeStamp) / 1000)) / 1024);
+		var speed = Math.round((socket.bytesWritten - biteStamp) / 1024);
 		process.send({
 			type: 'progressUpdate',
 			speed: speed,
 			bytesWritten: socket.bytesWritten
 		});
 		biteStamp = socket.bytesWritten;
-		timeStamp = now;
 	}, 1000);
 
 	rs.on('end', function () {
@@ -29,7 +26,7 @@ var server = net.createServer(function (socket) {
 		socket.destroy();
 		process.exit();
 	});
-
+	
 }).listen(9090, function () {
 	process.send({
 		type: 'serverReady'

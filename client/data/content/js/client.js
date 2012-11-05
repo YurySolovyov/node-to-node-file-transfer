@@ -78,6 +78,11 @@ $(window).on('app-ready',function(){
 			console.log(data.toString());
 			log('error in child');
 		});
+		$('#cancelTransfer').click(function(){
+			$(this).attr('disabled','disabled');
+			fileServer.kill();
+			log('cancelTransfer event');
+		});
 	});
 	
 	mainSocket.on('fileServerStarted',function(data){
@@ -94,7 +99,7 @@ $(window).on('app-ready',function(){
 				log('transfer complete');
 			}else if(message.type === 'error'){
 				log(message.err);
-			}	
+			}
 		});
 		fileSocket.on('exit',function(){
 			log('child exited'+(new Date().getTime()));
@@ -102,6 +107,16 @@ $(window).on('app-ready',function(){
 		fileSocket.stderr.on('data',function(data){
 			console.log(data.toString());
 			log('error in child');
+		});
+		$('#cancelTransfer').click(function(){
+			$(this).attr('disabled','disabled');
+			fileSocket.kill();
+			log('cancelTransfer event');
+			fs.unlink(filePath,function(err){
+				if(!err){
+					log('clean up done');
+				}
+			})
 		});
 	});
 	
