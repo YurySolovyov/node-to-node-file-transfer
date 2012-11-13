@@ -101,23 +101,31 @@ $(window).on('app-ready',function(){
 				log(message.err);
 			}
 		});
+		function cleanOnCancel(path){
+			fs.unlink(path,function(err){
+				if(!err){
+					log('clean up done');
+				}
+			})
+		}
 		fileSocket.on('exit',function(){
 			log('child exited'+(new Date().getTime()));
+			if(fileSize > fs.statSync(filePath).size){
+				cleanOnCancel(filePath);
+			}
 		});
 		fileSocket.stderr.on('data',function(data){
 			console.log(data.toString());
 			log('error in child');
 		});
 		$('#cancelTransfer').click(function(){
-			$(this).attr('disabled','disabled');
-			fileSocket.kill();
-			log('cancelTransfer event');
-			fs.unlink(filePath,function(err){
-				if(!err){
-					log('clean up done');
-				}
-			})
+			if(fileSocket){
+				$(this).attr('disabled','disabled');
+				fileSocket.kill();
+				log('cancelTransfer event');
+			}
 		});
+		
 	});
 	
 	mainSocket.on('message',function(data){
@@ -125,7 +133,13 @@ $(window).on('app-ready',function(){
 	});
 	
 	$('#acceptFile').click(function(){
-		var dialogOptions = {type:'save',acceptTypes:{All:['*.*']},initialValue:$('#fileName').html(),multiSelect:false,dirSelect:false};
+		var dialogOptions = {
+			type:'save',
+			acceptTypes:{All:['*.*']},
+			initialValue:$('#fileName').html(),
+			multiSelect:false,
+			dirSelect:false
+		}
 		var onFileSelected = function(err,file){
 			if(!err){
 				$('#fileAcceptForm').animate({top:'-300px',opacity:'hide'});
@@ -139,7 +153,12 @@ $(window).on('app-ready',function(){
 
 	$('#userList').on('click','li',function(){
 		var to = $(this).text();
-		var dialogOptions = {type:'open',acceptTypes:{All:['*.*']},multiSelect:false,dirSelect:false};
+		var dialogOptions = {
+			type:'open',
+			acceptTypes:{All:['*.*']},
+			multiSelect:false,
+			dirSelect:false
+		}
 		var onFileSelected = function(err,files){
 			if(!err){
 				var file = files[0];

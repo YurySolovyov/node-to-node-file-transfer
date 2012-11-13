@@ -5,7 +5,11 @@ var server = net.createServer(function (socket) {
 	var rs = fs.createReadStream(filePath, {
 		bufferSize: 1024 * 1024
 	});
-	rs.pipe(socket);
+	try{
+		rs.pipe(socket);
+	}catch(err){
+	// try something smart here too
+	}
 	var biteStamp = 0;
 	var speedCheck = setInterval(function () {
 		var speed = Math.round((socket.bytesWritten - biteStamp) / 1024);

@@ -9,7 +9,13 @@ var fileSocket = net.createConnection(9090, process.env.serverAddress, function 
 var ws = fs.createWriteStream(filePath, {
 	bufferSize: 1024 * 1024
 });
-fileSocket.pipe(ws);
+
+try{
+	fileSocket.pipe(ws);
+}catch(err){
+// try something smart here
+}
+
 var biteStamp = 0;
 var speedCheck = setInterval(function () {
 	var speed = Math.round((fileSocket.bytesRead - biteStamp) / 1024);
